@@ -1,0 +1,41 @@
+{
+  "name": "be-starter",
+  "version": "0.0.1",
+  "description": "Backend Starter Project",
+  "homepage": "https://github.com/galeka99/be-starter#readme",
+  "bugs": {
+    "url": "https://github.com/galeka99/be-starter/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/galeka99/be-starter.git"
+  },
+  "license": "MIT",
+  "author": "Galang",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tsx watch index.ts",
+    "start": "tsx index.ts",
+    "build": "rm -rf dist && tsup ./index.ts --minify --format esm,cjs --dts"
+  },
+  "imports": {
+    "#app/*": "./app/*.js"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.0.1",
+    "dotenv": "^16.5.0",
+    "fastify": "^5.2.2",
+    "tsx": "^4.19.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.24.0",
+    "@types/node": "^22.14.0",
+    "eslint": "^9.24.0",
+    "eslint-plugin-unused-imports": "^4.1.4",
+    "pino-pretty": "^13.0.0",
+    "tsup": "^8.4.0",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.29.1"
+  }
+}
