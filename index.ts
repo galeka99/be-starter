@@ -1,58 +1,39 @@
-import Fastify, { DoneFuncWithErrOrRes, FastifyReply, FastifyRequest } from 'fastify'
-import cors from '@fastify/cors'
-import errorHandler from '#app/exceptions/error_handler'
-import AppException from '#app/exceptions/app_exception'
+import Fastify from 'fastify'
 import routes from '#app/routes/index'
 import AppConfig from '#app/configs/app'
+import FastifyUtil from '#app/utils/fastify'
+import { ajvFilePlugin } from '@fastify/multipart'
 
 const fastify = Fastify({
   logger: {
     transport: {
-      target: 'pino-pretty',
-      options: {
-        translateTime: 'HH:mm:ss Z',
-        ignore: 'pid,hostname',
-      }
-    }
+      target: '@fastify/one-line-logger',
+    },
   },
+  ajv: {
+    plugins: [
+      ajvFilePlugin,
+    ]
+  }
 })
 
-// REGISTER CORS
-fastify.register(cors, {
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type'],
-})
+const start = async function () {
+  FastifyUtil.decorateJsonReply(fastify)
+  FastifyUtil.setErrorHandler(fastify)
+  FastifyUtil.jsonParser(fastify)
+  await FastifyUtil.registerCors(fastify)
+  await FastifyUtil.multipartHandler(fastify)
+  FastifyUtil.transformMultipart(fastify)
+  await fastify.register(routes)
 
-// REGISTER JSON RESPONSE HELPER
-fastify.decorateReply('json', function (this: FastifyReply, data: object | string | number | boolean | null = null, status = 200, message: string | null = null) {
-  this.status(status).send({
-    status,
-    message,
-    data,
+  // Waiting for fastify server to ready
+  await fastify.ready()
+
+  // Start the server
+  await fastify.listen({
+    host: AppConfig.app.host,
+    port: AppConfig.app.port,
   })
-})
+}
 
-// SET DEFAULT ERROR HANDLER
-fastify.setErrorHandler(errorHandler)
-
-// REGISTER JSON PARSER
-fastify.addContentTypeParser('application/json', { parseAs: 'string' }, function (request: FastifyRequest, body: string | Buffer<ArrayBufferLike>, done: DoneFuncWithErrOrRes) {
-  try {
-    const json = JSON.parse(body as string)
-    done(null, json)
-  } catch (_) {
-    throw new AppException(400, 'Error while parsing JSON request body')
-  }
-})
-
-// REGISTER ROUTES
-fastify.register(routes)
-
-// START THE SERVICE
-fastify.listen({ port: AppConfig.app.port }, (err) => {
-  if (err) {
-    fastify.log.error(err)
-    process.exit(1)
-  }
-})
+start()
